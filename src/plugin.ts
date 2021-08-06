@@ -189,8 +189,19 @@ export function sassPlugin(options: SassPluginOptions = {}): Plugin {
                 };
             }
 
+            let lastWatchFiles: string[] = [];
             async function transform(path: string, type: string): Promise<OnLoadResult> {
-                let {css, watchFiles} = path.endsWith(".css") ? readCssFileSync(path) : renderSync(path);
+                let renderResult;
+                try {
+                    renderResult = path.endsWith(".css") ? readCssFileSync(path) : renderSync(path);
+                } catch (e) {
+                    return {
+                        errors: [{ text: e.message }],
+                        watchFiles: lastWatchFiles
+                    }
+                }
+                let {css, watchFiles} = renderResult;
+                lastWatchFiles = watchFiles;
                 if (options.transform) {
                     css = await options.transform(css, dirname(path));
                 }
